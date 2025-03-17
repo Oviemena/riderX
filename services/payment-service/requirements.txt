@@ -1,0 +1,11 @@
+flask
+redis
+redis-py-cluster
+firebase-admin
+requests
+numpy
+prometheus-client
+tenacity
+flask-jwt-extended
+flask-limiter
+paystack  # Added for Paystack integration

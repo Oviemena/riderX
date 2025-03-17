@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        image: us-central1-docker.pkg.dev/riderx-pilot/riderx-repo/payment-service:latest
+        ports:
+        - containerPort: 5003
+        - containerPort: 8003
+        env:
+        - name: REDIS_HOST
+          value: "valkey-1"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: GOOGLE_MAPS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: riderx-secrets
+              key: google-maps-api-key
+        - name: PAYSTACK_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: riderx-secrets
+              key: paystack-secret-key
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: riderx-secrets
+              key: jwt-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment-service
+  ports:
+  - name: http
+    port: 5003
+    targetPort: 5003
+  - name: metrics
+    port: 8003
+    targetPort: 8003
+  type: ClusterIP

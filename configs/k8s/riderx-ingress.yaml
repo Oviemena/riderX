@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: riderx-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /driver
+        pathType: Prefix
+        backend:
+          service:
+            name: driver-service
+            port:
+              number: 5001
+      - path: /ride
+        pathType: Prefix
+        backend:
+          service:
+            name: ride-service
+            port:
+              number: 5002
+      - path: /payment
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 5003
+      - path: /metrics
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000

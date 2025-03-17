@@ -1,0 +1,18 @@
+{
+    "pipeline": {
+      "build": {
+        "dependsOn": ["^build"],
+        "outputs": ["dist/**"]
+      },
+      "start": {
+        "dependsOn": ["build"]
+      },
+      "test": {
+        "dependsOn": ["build"]
+      },
+      "deploy": {
+        "dependsOn": ["build", "test"]
+      }
+    },
+    "globalDependencies": ["configs/**"]
+  }

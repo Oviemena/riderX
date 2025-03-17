@@ -1,0 +1,31 @@
+[project]
+name = "payment-service"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Oviemena",email = "okpowoduoviemena999@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9, <4"
+dependencies = [
+    "flask>=3.1.0,<4.0.0",
+    "redis>=3.0.0,<4.0.0",  # Pinned for redis-py-cluster compatibility
+    "redis-py-cluster>=2.1.3",
+    "firebase-admin>=6.6.0",
+    "requests>=2.32.3",
+    "numpy>=1.24.0",
+    "prometheus-client>=0.21.1",
+    "tenacity>=9.0.0",
+    "flask-jwt-extended>=4.7.1",
+    "flask-limiter>=3.5.0",
+    "paystack>=1.5.0",
+    "python-decouple (>=3.8,<4.0)"
+]
+
+[tool.poetry]
+packages = [{include = "payment_service", from = "src"}]
+package-mode = false  # Disable package mode if you don't need packaging
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

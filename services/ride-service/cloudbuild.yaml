@@ -1,0 +1,33 @@
+steps:
+  # Install Poetry
+  - name: 'python:3.9'
+    entrypoint: 'pip'
+    args: ['install', 'poetry']
+
+  # Install Python dependencies with Poetry
+  - name: 'python:3.9'
+    entrypoint: 'poetry'
+    args: ['install', '--no-dev']
+
+  # Run tests
+  - name: 'python:3.9'
+    entrypoint: 'poetry'
+    args: ['run', 'pytest', 'tests/test_ride_service.py']
+
+  # Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/riderx-repo/ride-service:latest', '.']
+  
+  # Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/riderx-repo/ride-service:latest']
+  
+  # Deploy to GKE
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args: ['apply', '-f', 'k8s/ride-service-deployment.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=riderx-cluster'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/riderx-repo/ride-service:latest'

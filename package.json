@@ -1,0 +1,17 @@
+{
+  "name": "riderx",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "test": "turbo run test",
+    "deploy": "turbo run deploy"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4"
+  }
+}

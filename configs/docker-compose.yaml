@@ -1,0 +1,222 @@
+services:
+  valkey-1:
+    image: valkey/valkey:7.2.5
+    container_name: valkey-1
+    command: >
+      valkey-server 
+      --port 6379 
+      --cluster-enabled yes 
+      --cluster-config-file nodes.conf 
+      --cluster-node-timeout 5000 
+      --appendonly yes 
+      --bind 0.0.0.0
+      --cluster-announce-ip valkey-1
+    ports:
+      - "6379:6379"
+      - "16379:16379"
+    volumes:
+      - valkey-1-data:/data
+    networks:
+      - riderx-net
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  valkey-2:
+    image: valkey/valkey:7.2.5
+    container_name: valkey-2
+    command: >
+      valkey-server 
+      --port 6379 
+      --cluster-enabled yes 
+      --cluster-config-file nodes.conf 
+      --cluster-node-timeout 5000 
+      --appendonly yes 
+      --bind 0.0.0.0
+      --cluster-announce-ip valkey-2
+    ports:
+      - "6380:6379"
+      - "16380:16379"
+    volumes:
+      - valkey-2-data:/data
+    networks:
+      - riderx-net
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  valkey-3:
+    image: valkey/valkey:7.2.5
+    container_name: valkey-3
+    command: >
+      valkey-server 
+      --port 6379 
+      --cluster-enabled yes 
+      --cluster-config-file nodes.conf 
+      --cluster-node-timeout 5000 
+      --appendonly yes 
+      --bind 0.0.0.0
+      --cluster-announce-ip valkey-3
+    ports:
+      - "6381:6379"
+      - "16381:16379"
+    volumes:
+      - valkey-3-data:/data
+    networks:
+      - riderx-net
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  valkey-cluster-init:
+    image: valkey/valkey:7.2.5
+    container_name: valkey-cluster-init
+    networks:
+      - riderx-net
+    depends_on:
+      valkey-1:
+        condition: service_healthy
+      valkey-2:
+        condition: service_healthy
+      valkey-3:
+        condition: service_healthy
+    command: >
+      bash -c "
+        sleep 5 &&
+        for node in valkey-1 valkey-2 valkey-3; do
+          echo 'Cleaning up node' $${node} &&
+          valkey-cli -h $${node} -p 6379 FLUSHALL &&
+          valkey-cli -h $${node} -p 6379 CLUSTER RESET
+        done &&
+        sleep 2 &&
+        valkey-cli --cluster create valkey-1:6379 valkey-2:6379 valkey-3:6379 --cluster-replicas 0 --cluster-yes
+      "
+
+  driver-service:
+    build:
+      context: ../ # Move context up one level
+      dockerfile: services/driver-service/Dockerfile  # Adjust path to Dockerfile
+    ports:
+      - "5001:5001"
+      - "8001:8001"
+    depends_on:
+      valkey-cluster-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001"]  # Checks metrics endpoint
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
+    networks:
+      - riderx-net
+    command: python run.py
+
+  
+  data-pipeline:
+    build:
+      context: ../
+      dockerfile: services/data-pipeline/Dockerfile
+    environment:
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
+    depends_on:
+      - driver-service
+    volumes:
+      - ../services/data-pipeline:/app  # Mount to access training_data.csv and xgboost_model.pkl
+    networks:
+      - riderx-net
+
+
+
+  # ride-service:
+  #   build: ../services/ride-service
+  #   ports:
+  #     - "5002:5002"
+  #     - "8002:8002"
+  #   depends_on:
+  #     - valkey-1
+  #   environment:
+  #     - REDIS_HOST=${REDIS_HOST}
+  #     - REDIS_PORT=${REDIS_PORT}
+  #     - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+  #     - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+  #   networks:
+  #     - riderx-net
+
+  # payment-service:
+  #   build: ../services/payment-service
+  #   ports:
+  #     - "5003:5003"
+  #     - "8003:8003"
+  #   depends_on:
+  #     - valkey-1
+  #   environment:
+  #     - REDIS_HOST=${REDIS_HOST}
+  #     - REDIS_PORT=${REDIS_PORT}
+  #     - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+  #     - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY}
+  #     - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+  #   networks:
+  #     - riderx-net
+
+  # nginx:
+  #   image: nginx:latest
+  #   volumes:
+  #     - ./configs/nginx.conf:/etc/nginx/nginx.conf
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - driver-service
+  #     - ride-service
+  #     - payment-service
+  #   networks:
+  #     - riderx-net
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - riderx-net
+
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - riderx-net
+networks:
+  riderx-net:
+    driver: bridge
+
+volumes:
+  valkey-1-data:
+  valkey-2-data:
+  valkey-3-data:

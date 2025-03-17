@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driver-service
+  labels:
+    app: driver-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: driver-service
+  template:
+    metadata:
+      labels:
+        app: driver-service
+    spec:
+      containers:
+      - name: driver-service
+        image: us-central1-docker.pkg.dev/riderx-pilot/riderx-repo/driver-service:latest
+        ports:
+        - containerPort: 5001
+        - containerPort: 8001
+        env:
+        - name: REDIS_HOST
+          value: "valkey-1"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: GOOGLE_MAPS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: riderx-secrets
+              key: google-maps-api-key
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: riderx-secrets
+              key: jwt-secret-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: driver-service
+spec:
+  selector:
+    app: driver-service
+  ports:
+  - name: http
+    port: 5001
+    targetPort: 5001
+  - name: metrics
+    port: 8001
+    targetPort: 8001
+  type: ClusterIP

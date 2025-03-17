@@ -1,0 +1,12 @@
+flask
+redis
+redis-py-cluster
+firebase-admin
+requests
+numpy
+xgboost
+scikit-learn
+prometheus-client
+tenacity
+flask-jwt-extended
+flask-limiter  # Added for rate limiting

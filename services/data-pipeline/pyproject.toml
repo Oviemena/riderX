@@ -1,0 +1,22 @@
+[project]
+name = "data-pipeline"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Oviemena",email = "okpowoduoviemena999@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "firebase-admin>=6.6.0",
+    "requests>=2.32.3",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "xgboost>=2.0.3",
+    "scikit-learn>=1.4.0",
+    "python-decouple (>=3.8,<4.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
