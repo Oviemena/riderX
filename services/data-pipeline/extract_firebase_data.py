@@ -16,13 +16,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Setup paths and configuration
-shared_utils_path = Path("/app") if not __name__ == "__main__" else Path(__file__).parent.parent.parent / "shared-utils"
-sys.path.append(str(shared_utils_path))
-
-from shared_utils.connections.connections import get_firebase_db
-from shared_utils.haversine.haversine import haversine
-
+# Import directly - the PYTHONPATH is set to /app in the Dockerfile
+try:
+    from shared_utils.connections.connections import get_firebase_db
+    from shared_utils.haversine.haversine import haversine
+    logger.info("Successfully imported shared_utils")
+except ModuleNotFoundError as e:
+    logger.error(f"Failed to import shared_utils: {e}")
+    # Try alternate path resolution as fallback
+    shared_utils_path = Path(__file__).parent.parent.parent / "shared-utils"
+    sys.path.append(str(shared_utils_path))
+    logger.info(f"Added {shared_utils_path} to sys.path")
+    from shared_utils.connections.connections import get_firebase_db
+    from shared_utils.haversine.haversine import haversine
 # Constants
 GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY")
 DEFAULT_RATING = 4.0

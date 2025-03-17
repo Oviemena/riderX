@@ -31,7 +31,7 @@ RUN poetry config virtualenvs.create false \
 COPY services/data-pipeline/extract_firebase_data.py .
 COPY services/data-pipeline/train_xgboost.py .
 
-# Set PYTHONPATH explicitly
+# Set PYTHONPATH explicitly to include the current directory
 ENV PYTHONPATH=/app
 
 CMD ["sh", "-c", "python extract_firebase_data.py && python train_xgboost.py"]
